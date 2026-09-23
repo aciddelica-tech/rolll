@@ -22,9 +22,11 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     // VirtualDJ slider values are normalized to 0..1. The visual center is
     // represented by 0.5 and exposed to the user as length 0.
     lengthControl_ = 0.5f;
+    filterControl_ = lengthControl_;
     strengthControl_ = 1.0f;
     DeclareParameterSlider(&strengthControl_, ID_STRENGTH, "Loop Roll", "Strength", strengthControl_);
     DeclareParameterSlider(&lengthControl_, ID_LENGTH, "Loop Roll", "Length", lengthControl_);
+    DeclareParameterSlider(&filterControl_, ID_FILTER, "Loop Roll", "Filter", filterControl_);
     OnParameter(ID_STRENGTH);
     OnParameter(ID_LENGTH);
 
@@ -78,6 +80,14 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Strength\"/></textzone>"
         "<textzone><pos x=\"72\" y=\"67\"/><size width=\"110\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 1\"/></textzone>"
+        "<slider action=\"effect slider 3\" orientation=\"round\" frommiddle=\"true\"><pos x=\"205\" y=\"46\"/><size width=\"46\" height=\"46\"/>"
+        "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
+        "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
+        "<fill width=\"46\" height=\"46\" radius=\"18\" color=\"#AA2020\" backcolor=\"#202020\"/></slider>"
+        "<textzone><pos x=\"259\" y=\"48\"/><size width=\"70\" height=\"18\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Filter\"/></textzone>"
+        "<textzone><pos x=\"259\" y=\"67\"/><size width=\"110\" height=\"18\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 3\"/></textzone>"
         "<slider action=\"effect slider 2\" orientation=\"round\" frommiddle=\"true\"><pos x=\"18\" y=\"101\"/><size width=\"46\" height=\"46\"/>"
         "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
         "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
@@ -103,6 +113,15 @@ HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
     }
     else if (id == ID_LENGTH)
     {
+        filterControl_ = lengthControl_;
+        lengthIndex_ = controlToIndex(lengthControl_);
+        if (active_)
+            loopSamples_ = requestedLoopSamples();
+    }
+    else if (id == ID_FILTER)
+    {
+        filterControl_ = std::clamp(filterControl_, 0.0f, 1.0f);
+        lengthControl_ = filterControl_;
         lengthIndex_ = controlToIndex(lengthControl_);
         if (active_)
             loopSamples_ = requestedLoopSamples();
@@ -133,6 +152,16 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
             std::snprintf(outParam, static_cast<size_t>(outParamSize), "-%s",
                           lengthName(lengthIndex_));
         }
+        return S_OK;
+    }
+    if (id == ID_FILTER)
+    {
+        const float distanceFromCenter = filterControl_ - 0.5f;
+        if (std::abs(distanceFromCenter) < 0.05f)
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "0");
+        else
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "-%s",
+                          lengthName(controlToIndex(filterControl_)));
         return S_OK;
     }
     return E_NOTIMPL;

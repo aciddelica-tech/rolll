@@ -23,13 +23,15 @@ private:
     enum ParameterId
     {
         ID_STRENGTH = 1,
-        ID_LENGTH = 2
+        ID_LENGTH = 2,
+        ID_FILTER = 3
     };
 
     // Length is a bipolar control: 0 is the center/off position and either
     // direction selects the same beat length by its absolute position.
     float strengthControl_ = 1.0f;
     float lengthControl_ = 0.5f;
+    float filterControl_ = 0.5f;
     int lengthIndex_ = 0;
 
     bool active_ = false;
