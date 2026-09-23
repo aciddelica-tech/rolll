@@ -142,5 +142,7 @@ private:
     int channels_ = 2;
     std::size_t writePos_, loopFrames_;
     bool active_;
-    std::vector<float> buffer_;
+bool captured_;
+std::vector<float> buffer_;
+  
 };
