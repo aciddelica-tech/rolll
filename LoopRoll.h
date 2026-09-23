@@ -24,11 +24,11 @@ private:
         ID_LENGTH = 2
     };
 
-    static constexpr int kLengthCount = 8;
+    static constexpr int kLengthCount = 9;
 
-    // Continuous UI value, quantized to 8 Loop Roll lengths.
+    // Continuous UI value, quantized to 9 Loop Roll lengths.
     float strengthControl_ = 1.0f;
-    float lengthControl_ = 3.0f / 7.0f;
+    float lengthControl_ = 3.0f / 8.0f;
     int lengthIndex_ = 3; // 1/4 beat by default
 
     bool active_ = false;

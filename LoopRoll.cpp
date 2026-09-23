@@ -16,8 +16,8 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     loopSamples_ = 0;
     output_.clear();
 
-    // Eight discrete choices exposed through the standard VirtualDJ effect slider.
-    // The skin maps 0..100% to 1/32..4 beats.
+    // Nine discrete choices exposed through the standard VirtualDJ effect slider.
+    // The skin maps 0..100% to 1/32..4 beats, including 3/4 beat.
     lengthIndex_ = 3;
     lengthControl_ = indexToControl(lengthIndex_);
     strengthControl_ = 1.0f;
@@ -50,52 +50,60 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
 
     pluginInterface->Type = VDJINTERFACE_SKIN;
     static const char kSkinXml[] =
-        "<Skin name=\"Loop Roll\" version=\"8\" width=\"520\" height=\"240\">"
+        "<Skin name=\"Loop Roll\" version=\"8\" width=\"390\" height=\"270\">"
         "<Copyright>Acid Delica</Copyright>"
         "<button action=\"effect active\"><pos x=\"10\" y=\"8\"/><size width=\"28\" height=\"28\"/>"
         "<off color=\"#404040\" border=\"#AAAAAA\" border_size=\"2\"/>"
         "<on color=\"green\" border=\"white\" border_size=\"2\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"ON\"/>"
         "<Tooltip>Activate Loop Roll</Tooltip></button>"
-        "<textzone><size width=\"320\" height=\"24\"/><pos x=\"48\" y=\"10\"/>"
-        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" align=\"left\" action=\"get_effect_slider_text 1\"/></textzone>"
-        "<textzone><size width=\"120\" height=\"20\"/><pos x=\"20\" y=\"42\"/>"
+        "<textzone><pos x=\"48\" y=\"10\"/><size width=\"300\" height=\"24\"/>"
+        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 1\"/></textzone>"
+        "<slider action=\"effect slider 1\" orientation=\"round\"><pos x=\"18\" y=\"46\"/><size width=\"46\" height=\"46\"/>"
+        "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
+        "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
+        "<fill width=\"46\" height=\"46\" radius=\"18\" color=\"#AA2020\" backcolor=\"#202020\"/></slider>"
+        "<textzone><pos x=\"72\" y=\"48\"/><size width=\"110\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Strength\"/></textzone>"
-        "<slider action=\"effect slider 1\" orientation=\"horizontal\"><pos x=\"20\" y=\"62\"/>"
-        "<size width=\"220\" height=\"26\"/>"
-        "<off height=\"8\" color=\"#404040\" border=\"#888888\" border_size=\"1\"/>"
-        "<on height=\"8\" color=\"marine\" border=\"#AAAAAA\" border_size=\"1\"/>"
-        "<fader><size width=\"14\" height=\"26\"/><off color=\"white\" border=\"#202020\" border_size=\"1\"/></fader></slider>"
-        "<textzone><size width=\"80\" height=\"20\"/><pos x=\"250\" y=\"65\"/>"
-        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" align=\"right\" action=\"get_effect_slider_text 1\"/></textzone>"
-        "<textzone><size width=\"120\" height=\"20\"/><pos x=\"20\" y=\"102\"/>"
+        "<textzone><pos x=\"72\" y=\"67\"/><size width=\"110\" height=\"18\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 1\"/></textzone>"
+        "<slider action=\"effect slider 2\" orientation=\"round\"><pos x=\"18\" y=\"101\"/><size width=\"46\" height=\"46\"/>"
+        "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
+        "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
+        "<fill width=\"46\" height=\"46\" radius=\"18\" color=\"#AA2020\" backcolor=\"#202020\"/></slider>"
+        "<textzone><pos x=\"72\" y=\"103\"/><size width=\"110\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Length\"/></textzone>"
-        "<button action=\"effect slider 2 0%\"><size width=\"58\" height=\"32\"/><pos x=\"20\" y=\"130\"/>"
+        "<textzone><pos x=\"72\" y=\"122\"/><size width=\"110\" height=\"18\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 2\"/></textzone>"
+        "<button action=\"effect slider 2 0%\"><size width=\"95\" height=\"32\"/><pos x=\"205\" y=\"45\"/>"
         "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/32\"/></button>"
-        "<button action=\"effect slider 2 14.2857%\"><size width=\"58\" height=\"32\"/><pos x=\"82\" y=\"130\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/32 bt\"/></button>"
+        "<button action=\"effect slider 2 12.5%\"><size width=\"95\" height=\"32\"/><pos x=\"300\" y=\"45\"/>"
         "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/16\"/></button>"
-        "<button action=\"effect slider 2 28.5714%\"><size width=\"58\" height=\"32\"/><pos x=\"144\" y=\"130\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/16 bt\"/></button>"
+        "<button action=\"effect slider 2 25%\"><size width=\"95\" height=\"32\"/><pos x=\"205\" y=\"80\"/>"
         "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/8\"/></button>"
-        "<button action=\"effect slider 2 42.8571%\"><size width=\"58\" height=\"32\"/><pos x=\"206\" y=\"130\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/8 bt\"/></button>"
+        "<button action=\"effect slider 2 37.5%\"><size width=\"95\" height=\"32\"/><pos x=\"300\" y=\"80\"/>"
         "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/4\"/></button>"
-        "<button action=\"effect slider 2 57.1429%\"><size width=\"58\" height=\"32\"/><pos x=\"268\" y=\"130\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/4 bt\"/></button>"
+        "<button action=\"effect slider 2 50%\"><size width=\"95\" height=\"32\"/><pos x=\"205\" y=\"115\"/>"
         "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/2\"/></button>"
-        "<button action=\"effect slider 2 71.4286%\"><size width=\"58\" height=\"32\"/><pos x=\"330\" y=\"130\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/2 bt\"/></button>"
+        "<button action=\"effect slider 2 62.5%\"><size width=\"95\" height=\"32\"/><pos x=\"300\" y=\"115\"/>"
         "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1 beat\"/></button>"
-        "<button action=\"effect slider 2 85.7143%\"><size width=\"58\" height=\"32\"/><pos x=\"392\" y=\"130\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"3/4 bt\"/></button>"
+        "<button action=\"effect slider 2 75%\"><size width=\"95\" height=\"32\"/><pos x=\"205\" y=\"150\"/>"
         "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"2 beats\"/></button>"
-        "<button action=\"effect slider 2 100%\"><size width=\"58\" height=\"32\"/><pos x=\"454\" y=\"130\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1 bt\"/></button>"
+        "<button action=\"effect slider 2 87.5%\"><size width=\"95\" height=\"32\"/><pos x=\"300\" y=\"150\"/>"
         "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"4 beats\"/></button>"
-        "<textzone><size width=\"500\" height=\"20\"/><pos x=\"10\" y=\"178\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"center\" format=\"1/32  1/16  1/8  1/4  1/2  1  2  4 beats\"/></textzone>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"2 bt\"/></button>"
+        "<button action=\"effect slider 2 100%\"><size width=\"95\" height=\"32\"/><pos x=\"205\" y=\"185\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"4 bt\"/></button>"
+        "<textzone><pos x=\"205\" y=\"225\"/><size width=\"190\" height=\"20\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"1/32  1/16  1/8  1/4  1/2  3/4  1  2  4 beats\"/></textzone>"
         "</Skin>";
     pluginInterface->Xml = kSkinXml;
     pluginInterface->ImageBuffer = const_cast<unsigned char*>(kSkinPng);
@@ -181,6 +189,7 @@ int LoopRollPlugin::requestedLoopSamples() const
         1.0 / 8.0,
         1.0 / 4.0,
         1.0 / 2.0,
+        3.0 / 4.0,
         1.0,
         2.0,
         4.0
@@ -194,7 +203,7 @@ const char* LoopRollPlugin::lengthName(int index)
 {
     static const char* names[kLengthCount] =
     {
-        "1/32", "1/16", "1/8", "1/4", "1/2", "1 beat", "2 beats", "4 beats"
+        "1/32", "1/16", "1/8", "1/4", "1/2", "3/4", "1 beat", "2 beats", "4 beats"
     };
     return names[std::clamp(index, 0, kLengthCount - 1)];
 }
