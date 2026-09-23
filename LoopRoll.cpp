@@ -208,8 +208,8 @@ int LoopRollPlugin::controlToIndex(float value)
     if (magnitude < 0.05f)
         return 0;
     return std::clamp(
-        static_cast<int>((magnitude - 0.05f) / 0.95f * kLengthCount),
-        0, kLengthCount - 1);
+        1 + static_cast<int>((magnitude - 0.05f) / 0.95f * (kLengthCount - 1)),
+        1, kLengthCount - 1);
 }
 
 short* VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
