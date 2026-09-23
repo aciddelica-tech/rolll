@@ -26,7 +26,10 @@ jobs:
             -OutFile $zip
 
           if (Test-Path $sdk) {
-            Remove-Item $sdk -Recurse -Force
+            Remove-Item `
+              $sdk `
+              -Recurse `
+              -Force
           }
 
           Expand-Archive `
@@ -40,26 +43,33 @@ jobs:
             | Select-Object -First 1
 
           if (-not $header) {
-            Write-Error "vdjPlugin8.h was not found in the SDK"
+            Write-Error `
+              "vdjPlugin8.h was not found in the SDK"
             exit 1
           }
 
-          $sdkRoot = $header.Directory.FullName
+          $sdkRoot =
+            $header.Directory.FullName
 
-          "VDJ_SDK_DIR=$sdkRoot" >> $env:GITHUB_ENV
+          "VDJ_SDK_DIR=$sdkRoot" `
+            >> $env:GITHUB_ENV
 
-          Write-Host "VirtualDJ SDK: $sdkRoot"
+          Write-Host `
+            "VirtualDJ SDK: $sdkRoot"
 
       - name: Configure CMake
         shell: powershell
         run: |
-          cmake -S . -B build `
+          cmake `
+            -S . `
+            -B build `
             -DVDJ_SDK_DIR="$env:VDJ_SDK_DIR"
 
       - name: Build DLL
         shell: powershell
         run: |
-          cmake --build build `
+          cmake `
+            --build build `
             --config Release `
             --parallel
 
@@ -73,7 +83,8 @@ jobs:
             | Select-Object -First 1
 
           if (-not $dll) {
-            Write-Error "rolll.dll was not produced"
+            Write-Error `
+              "rolll.dll was not produced"
             exit 1
           }
 
