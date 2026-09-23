@@ -54,8 +54,8 @@ jobs:
         shell: powershell
         run: |
           cmake -S . -B build `
-            -G "Visual Studio 17 2022" `
-            -A x64 `
+            cmake -S . -B build `
+  -DVDJ_SDK_DIR="$env:VDJ_SDK_DIR"
             -DVDJ_SDK_DIR="$env:VDJ_SDK_DIR"
 
       - name: Build DLL
