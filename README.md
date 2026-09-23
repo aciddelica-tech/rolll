@@ -16,8 +16,8 @@ VirtualDJ SDK headers.
 ## Behavior
 
 - The Length control is off at its center (`0 ms`). Moving either direction
-  selects 20 steps displayed as `-10 ms` through `-190 ms`, decreasing by
-  `10 ms` per step.
+  selects 39 negative steps from `-400 ms` down to `-20 ms` in 10 ms
+  increments.
 - Strength controls the dry/wet mix from 0% to 100%.
 - Loop capture is aligned to the host's beat grid using `SongPosBeats` and
   `SongBpm`.

@@ -18,7 +18,7 @@ public:
     short* VDJ_API OnGetSongBuffer(int pos, int nb) override;
 
 private:
-    static constexpr int kLengthCount = 20;
+    static constexpr int kLengthCount = 40;
 
     enum ParameterId
     {
