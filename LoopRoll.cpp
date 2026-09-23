@@ -46,34 +46,35 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         return E_POINTER;
 
     pluginInterface->Type = VDJINTERFACE_SKIN;
-    pluginInterface->Xml =
+    static const char kSkinXml[] =
         "<Skin name=\"Loop Roll\" version=\"8\" width=\"420\" height=\"190\">"
         "<Copyright>Acid Delica</Copyright>"
-        "<button action=\"effect active\"><pos x=\"12\" y=\"10\"/><size width=\"22\" height=\"22\"/>"
-        "<up x=\"0\" y=\"0\"/><selected x=\"0\" y=\"0\"/></button>"
-        "<textzone><pos x=\"48\" y=\"10\"/><size width=\"170\" height=\"24\"/>"
-        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 1\"/></textzone>"
-        "<slider action=\"effect slider 1\" orientation=\"horizontal\">"
-        "<pos x=\"25\" y=\"55\" width=\"370\" height=\"28\"/><fader><pos x=\"0\" y=\"0\" width=\"370\" height=\"28\"/></fader></slider>"
-        "<button action=\"effect_slider 1 0%\"><pos x=\"12\" y=\"105\"/><size width=\"45\" height=\"32\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"white\" align=\"center\" format=\"1/32\"/></button>"
-        "<button action=\"effect_slider 1 14.2857%\"><pos x=\"61\" y=\"105\"/><size width=\"45\" height=\"32\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"white\" align=\"center\" format=\"1/16\"/></button>"
-        "<button action=\"effect_slider 1 28.5714%\"><pos x=\"110\" y=\"105\"/><size width=\"45\" height=\"32\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"white\" align=\"center\" format=\"1/8\"/></button>"
-        "<button action=\"effect_slider 1 42.8571%\"><pos x=\"159\" y=\"105\"/><size width=\"45\" height=\"32\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"white\" align=\"center\" format=\"1/4\"/></button>"
-        "<button action=\"effect_slider 1 57.1429%\"><pos x=\"208\" y=\"105\"/><size width=\"45\" height=\"32\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"white\" align=\"center\" format=\"1/2\"/></button>"
-        "<button action=\"effect_slider 1 71.4286%\"><pos x=\"257\" y=\"105\"/><size width=\"45\" height=\"32\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"white\" align=\"center\" format=\"1\"/></button>"
-        "<button action=\"effect_slider 1 85.7143%\"><pos x=\"306\" y=\"105\"/><size width=\"45\" height=\"32\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"white\" align=\"center\" format=\"2\"/></button>"
-        "<button action=\"effect_slider 1 100%\"><pos x=\"355\" y=\"105\"/><size width=\"45\" height=\"32\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"white\" align=\"center\" format=\"4\"/></button>"
-        "<textzone><pos x=\"12\" y=\"150\"/><size width=\"396\" height=\"22\"/>"
-        "<text font=\"arial\" size=\"12\" color=\"#AAAAAA\" align=\"center\" format=\"1/32  1/16  1/8  1/4  1/2  1  2  4 beats\"/></textzone>"
+        "<button action=\"effect active\"><size width=\"28\" height=\"28\"/><pos x=\"10\" y=\"8\"/>"
+        "<up x=\"0\" y=\"0\"/><selected x=\"0\" y=\"0\"/><Tooltip>Activate Loop Roll</Tooltip></button>"
+        "<textzone><size width=\"320\" height=\"24\"/><pos x=\"48\" y=\"10\"/>"
+        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" align=\"left\" action=\"get_effect_slider_text 1\"/></textzone>"
+        "<slider action=\"effect slider 1\" orientation=\"horizontal\"><pos x=\"20\" y=\"48\" width=\"380\" height=\"30\"/>"
+        "<fader><pos x=\"0\" y=\"0\" width=\"380\" height=\"30\"/></fader></slider>"
+        "<button action=\"effect slider 1 0%\"><size width=\"45\" height=\"30\"/><pos x=\"10\" y=\"92\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/32\"/></button>"
+        "<button action=\"effect slider 1 14.2857%\"><size width=\"45\" height=\"30\"/><pos x=\"59\" y=\"92\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/16\"/></button>"
+        "<button action=\"effect slider 1 28.5714%\"><size width=\"45\" height=\"30\"/><pos x=\"108\" y=\"92\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/8\"/></button>"
+        "<button action=\"effect slider 1 42.8571%\"><size width=\"45\" height=\"30\"/><pos x=\"157\" y=\"92\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/4\"/></button>"
+        "<button action=\"effect slider 1 57.1429%\"><size width=\"45\" height=\"30\"/><pos x=\"206\" y=\"92\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/2\"/></button>"
+        "<button action=\"effect slider 1 71.4286%\"><size width=\"45\" height=\"30\"/><pos x=\"255\" y=\"92\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1 beat\"/></button>"
+        "<button action=\"effect slider 1 85.7143%\"><size width=\"45\" height=\"30\"/><pos x=\"304\" y=\"92\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"2 beats\"/></button>"
+        "<button action=\"effect slider 1 100%\"><size width=\"45\" height=\"30\"/><pos x=\"353\" y=\"92\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"4 beats\"/></button>"
+        "<textzone><size width=\"400\" height=\"20\"/><pos x=\"10\" y=\"142\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"center\" format=\"1/32  1/16  1/8  1/4  1/2  1  2  4 beats\"/></textzone>"
         "</Skin>";
+    pluginInterface->Xml = kSkinXml;
     pluginInterface->ImageBuffer = const_cast<unsigned char*>(kSkinPng);
     pluginInterface->ImageSize = static_cast<int>(sizeof(kSkinPng));
     return S_OK;
@@ -119,10 +120,11 @@ HRESULT VDJ_API LoopRollPlugin::OnStart()
     if (loopSamples_ <= 0)
         return E_FAIL;
 
-    // SongBpm is explicitly the number of audio samples between beats in the
-    // VirtualDJ Buffer DSP SDK. Use SongPos directly so the roll starts on the
-    // host's current sample-accurate beat grid.
-    loopStart_ = (SongPos / loopSamples_) * loopSamples_;
+    const double gridBeats =
+        static_cast<double>(loopSamples_) / static_cast<double>(SongBpm);
+    const double gridIndex = std::floor(SongPosBeats / gridBeats);
+    loopStart_ = static_cast<int>(
+        std::llround(gridIndex * static_cast<double>(loopSamples_)));
     active_ = true;
     return S_OK;
 }

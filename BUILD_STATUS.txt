@@ -1,7 +1,6 @@
 Loop Roll build status
 
-1. The current GitHub Actions build is a valid x64 PE32+ Windows DLL.
-2. The current binary contains the Loop Roll metadata and embedded skin XML.
-3. GitHub write access returned HTTP 403 when attempting to commit the fix.
-4. LoopRoll_UI_and_grid_fix.patch contains the source changes prepared for the next build.
-5. The baseline DLL is included unchanged for comparison/testing only. It is NOT the corrected UI build.
+The source now contains the corrected skin controls and beat-grid alignment.
+GitHub Actions builds the x64 DLL using the official VirtualDJ SDK headers.
+The checked-in baseline DLL is retained for comparison only and is not rebuilt
+by this source change.
