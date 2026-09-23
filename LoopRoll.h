@@ -24,12 +24,11 @@ private:
         ID_LENGTH = 2
     };
 
-    static constexpr int kLengthCount = 9;
-
-    // Continuous UI value, quantized to 9 Loop Roll lengths.
+    // Length is a bipolar control: 0 is the center/off position and either
+    // direction selects the same beat length by its absolute position.
     float strengthControl_ = 1.0f;
-    float lengthControl_ = 3.0f / 8.0f;
-    int lengthIndex_ = 3; // 1/4 beat by default
+    float lengthControl_ = 0.0f;
+    int lengthIndex_ = 0;
 
     bool active_ = false;
     int loopStart_ = 0;
@@ -38,6 +37,6 @@ private:
 
     int requestedLoopSamples() const;
     static const char* lengthName(int index);
-    static float indexToControl(int index);
+    static float lengthBeats(int index);
     static int controlToIndex(float value);
 };

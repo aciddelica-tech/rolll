@@ -16,10 +16,10 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     loopSamples_ = 0;
     output_.clear();
 
-    // Nine discrete choices exposed through the standard VirtualDJ effect slider.
-    // The skin maps 0..100% to 1/32..4 beats, including 3/4 beat.
-    lengthIndex_ = 3;
-    lengthControl_ = indexToControl(lengthIndex_);
+    // Length is bipolar: center is zero and either direction selects the
+    // same beat length by its absolute position.
+    lengthIndex_ = 0;
+    lengthControl_ = 0.0f;
     strengthControl_ = 1.0f;
     DeclareParameterSlider(&strengthControl_, ID_STRENGTH, "Loop Roll", "Strength", strengthControl_);
     DeclareParameterSlider(&lengthControl_, ID_LENGTH, "Loop Roll", "Length", lengthControl_);
@@ -76,7 +76,7 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Strength\"/></textzone>"
         "<textzone><pos x=\"72\" y=\"67\"/><size width=\"110\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 1\"/></textzone>"
-        "<slider action=\"effect slider 2\" orientation=\"round\"><pos x=\"18\" y=\"101\"/><size width=\"46\" height=\"46\"/>"
+        "<slider action=\"effect slider 2\" orientation=\"round\" frommiddle=\"true\"><pos x=\"18\" y=\"101\"/><size width=\"46\" height=\"46\"/>"
         "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
         "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
         "<fill width=\"46\" height=\"46\" radius=\"18\" color=\"#AA2020\" backcolor=\"#202020\"/></slider>"
@@ -85,7 +85,7 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<textzone><pos x=\"72\" y=\"122\"/><size width=\"110\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 2\"/></textzone>"
         "<textzone><pos x=\"205\" y=\"150\"/><size width=\"170\" height=\"18\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"1/32  1/16  1/8  1/4  1/2  3/4  1  2  4 beats\"/></textzone>"
+        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"-1.0  -0.75  -0.5  -0.25  -0.1  0  0.1  0.25  0.5  0.75  1.0 beat\"/></textzone>"
         "</Skin>";
     pluginInterface->Xml = kSkinXml;
     pluginInterface->ImageBuffer = const_cast<unsigned char*>(kSkinPng);
@@ -102,7 +102,6 @@ HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
     else if (id == ID_LENGTH)
     {
         lengthIndex_ = controlToIndex(lengthControl_);
-        lengthControl_ = indexToControl(lengthIndex_);
         if (active_)
             loopSamples_ = requestedLoopSamples();
     }
@@ -122,7 +121,15 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
     }
     if (id == ID_LENGTH)
     {
-        std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s", lengthName(lengthIndex_));
+        if (std::abs(lengthControl_) < 0.05f)
+        {
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "0");
+        }
+        else
+        {
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s%s",
+                          lengthControl_ < 0.0f ? "-" : "", lengthName(lengthIndex_));
+        }
         return S_OK;
     }
     return E_NOTIMPL;
@@ -164,41 +171,42 @@ int LoopRollPlugin::requestedLoopSamples() const
     if (SongBpm <= 0)
         return 0;
 
-    static const double beats[kLengthCount] =
-    {
-        1.0 / 32.0,
-        1.0 / 16.0,
-        1.0 / 8.0,
-        1.0 / 4.0,
-        1.0 / 2.0,
-        3.0 / 4.0,
-        1.0,
-        2.0,
-        4.0
-    };
+    if (std::abs(lengthControl_) < 0.05f)
+        return 0;
 
-    const int index = std::clamp(lengthIndex_, 0, kLengthCount - 1);
-    return std::max(1, static_cast<int>(std::llround(static_cast<double>(SongBpm) * beats[index])));
+    return std::max(1, static_cast<int>(
+        std::llround(static_cast<double>(SongBpm) * lengthBeats(lengthIndex_))));
 }
 
 const char* LoopRollPlugin::lengthName(int index)
 {
-    static const char* names[kLengthCount] =
+    static const char* names[] =
     {
-        "1/32", "1/16", "1/8", "1/4", "1/2", "3/4", "1 beat", "2 beats", "4 beats"
+        "0.1", "0.25", "0.5", "0.75", "1.0"
     };
-    return names[std::clamp(index, 0, kLengthCount - 1)];
+    return names[std::clamp(index, 0, 4)];
 }
 
-float LoopRollPlugin::indexToControl(int index)
+float LoopRollPlugin::lengthBeats(int index)
 {
-    return static_cast<float>(std::clamp(index, 0, kLengthCount - 1)) / static_cast<float>(kLengthCount - 1);
+    static const float values[] = {0.1f, 0.25f, 0.5f, 0.75f, 1.0f};
+    return values[std::clamp(index, 0, 4)];
 }
 
 int LoopRollPlugin::controlToIndex(float value)
 {
-    const float clamped = std::clamp(value, 0.0f, 1.0f);
-    return std::clamp(static_cast<int>(std::lround(clamped * static_cast<float>(kLengthCount - 1))), 0, kLengthCount - 1);
+    const float magnitude = std::abs(std::clamp(value, -1.0f, 1.0f));
+    if (magnitude < 0.05f)
+        return 0;
+    if (magnitude < 0.175f)
+        return 0;
+    if (magnitude < 0.375f)
+        return 1;
+    if (magnitude < 0.625f)
+        return 2;
+    if (magnitude < 0.875f)
+        return 3;
+    return 4;
 }
 
 short* VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
