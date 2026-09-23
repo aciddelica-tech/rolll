@@ -37,6 +37,6 @@ private:
 
     int requestedLoopSamples() const;
     static const char* lengthName(int index);
-    static float lengthBeats(int index);
+    static int lengthMilliseconds(int index);
     static int controlToIndex(float value);
 };

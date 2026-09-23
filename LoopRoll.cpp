@@ -38,8 +38,8 @@ HRESULT VDJ_API LoopRollPlugin::OnGetPluginInfo(TVdjPluginInfo8* info)
 
     info->PluginName = "Loop Roll";
     info->Author = "Acid Delica";
-    info->Description = "Synchronized Loop Roll with strength and 1/32 to 4 beat control";
-    info->Version = "2.1.0";
+    info->Description = "Synchronized Loop Roll with strength and millisecond control";
+    info->Version = "2.4.0";
     info->Flags = 0x00;
     info->Bitmap = NULL;
     return S_OK;
@@ -87,7 +87,7 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<textzone><pos x=\"72\" y=\"122\"/><size width=\"110\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 2\"/></textzone>"
         "<textzone><pos x=\"205\" y=\"150\"/><size width=\"170\" height=\"18\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"-0.1  -0.25  -0.5  -0.75  0  0.75  0.5  0.25  0.1 beat\"/></textzone>"
+        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"-10 -20 -30 -40 -50  0  -50 -40 -30 -20 -10 ms\"/></textzone>"
         "</Skin>";
     pluginInterface->Xml = kSkinXml;
     pluginInterface->ImageBuffer = const_cast<unsigned char*>(kSkinPng);
@@ -130,8 +130,8 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
         }
         else
         {
-            std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s%s",
-                          distanceFromCenter < 0.0f ? "-" : "", lengthName(lengthIndex_));
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "-%sms",
+                          lengthName(lengthIndex_));
         }
         return S_OK;
     }
@@ -146,7 +146,7 @@ ULONG VDJ_API LoopRollPlugin::Release()
 
 HRESULT VDJ_API LoopRollPlugin::OnStart()
 {
-    if (SongBpm <= 0 || SongPos < 0)
+    if (SampleRate <= 0 || SongBpm <= 0 || SongPos < 0)
         return E_FAIL;
 
     loopSamples_ = requestedLoopSamples();
@@ -174,29 +174,31 @@ HRESULT VDJ_API LoopRollPlugin::OnStop()
 
 int LoopRollPlugin::requestedLoopSamples() const
 {
-    if (SongBpm <= 0)
+    if (SampleRate <= 0)
         return 0;
 
     if (std::abs(lengthControl_ - 0.5f) < 0.05f)
         return 0;
 
     return std::max(1, static_cast<int>(
-        std::llround(static_cast<double>(SongBpm) * lengthBeats(lengthIndex_))));
+        std::llround(static_cast<double>(SampleRate) *
+                     static_cast<double>(lengthMilliseconds(lengthIndex_)) /
+                     1000.0)));
 }
 
 const char* LoopRollPlugin::lengthName(int index)
 {
     static const char* names[] =
     {
-        "0.75", "0.5", "0.25", "0.1"
+        "10", "20", "30", "40", "50"
     };
     return names[std::clamp(index, 0, 3)];
 }
 
-float LoopRollPlugin::lengthBeats(int index)
+int LoopRollPlugin::lengthMilliseconds(int index)
 {
-    static const float values[] = {0.75f, 0.5f, 0.25f, 0.1f};
-    return values[std::clamp(index, 0, 3)];
+    static const int values[] = {10, 20, 30, 40, 50};
+    return values[std::clamp(index, 0, 4)];
 }
 
 int LoopRollPlugin::controlToIndex(float value)
@@ -204,13 +206,15 @@ int LoopRollPlugin::controlToIndex(float value)
     const float magnitude = std::abs(std::clamp(value, 0.0f, 1.0f) - 0.5f) * 2.0f;
     if (magnitude < 0.05f)
         return 0;
-    if (magnitude < 0.125f)
+    if (magnitude < 0.2f)
         return 0;
-    if (magnitude < 0.375f)
+    if (magnitude < 0.4f)
         return 1;
-    if (magnitude < 0.625f)
+    if (magnitude < 0.6f)
         return 2;
-    return 3;
+    if (magnitude < 0.8f)
+        return 3;
+    return 4;
 }
 
 short* VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
