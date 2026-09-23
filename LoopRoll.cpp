@@ -87,7 +87,7 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<textzone><pos x=\"72\" y=\"122\"/><size width=\"110\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 2\"/></textzone>"
         "<textzone><pos x=\"205\" y=\"150\"/><size width=\"170\" height=\"18\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"-10 -20 -30 -40 -50  0  -50 -40 -30 -20 -10 ms\"/></textzone>"
+        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"-10 -20 -30 -40 -50 -60 -70 -80 -90 -100  0  100 90 80 70 60 50 40 30 20 10 ms\"/></textzone>"
         "</Skin>";
     pluginInterface->Xml = kSkinXml;
     pluginInterface->ImageBuffer = const_cast<unsigned char*>(kSkinPng);
@@ -130,8 +130,8 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
         }
         else
         {
-            std::snprintf(outParam, static_cast<size_t>(outParamSize), "-%sms",
-                          lengthName(lengthIndex_));
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s%s",
+                          distanceFromCenter < 0.0f ? "-" : "", lengthName(lengthIndex_));
         }
         return S_OK;
     }
@@ -190,15 +190,14 @@ const char* LoopRollPlugin::lengthName(int index)
 {
     static const char* names[] =
     {
-        "10", "20", "30", "40", "50"
+        "100", "90", "80", "70", "60", "50", "40", "30", "20", "10"
     };
-    return names[std::clamp(index, 0, 3)];
+    return names[std::clamp(index, 0, 9)];
 }
 
 int LoopRollPlugin::lengthMilliseconds(int index)
 {
-    static const int values[] = {10, 20, 30, 40, 50};
-    return values[std::clamp(index, 0, 4)];
+    return 100 - std::clamp(index, 0, 9) * 10;
 }
 
 int LoopRollPlugin::controlToIndex(float value)
@@ -206,15 +205,7 @@ int LoopRollPlugin::controlToIndex(float value)
     const float magnitude = std::abs(std::clamp(value, 0.0f, 1.0f) - 0.5f) * 2.0f;
     if (magnitude < 0.05f)
         return 0;
-    if (magnitude < 0.2f)
-        return 0;
-    if (magnitude < 0.4f)
-        return 1;
-    if (magnitude < 0.6f)
-        return 2;
-    if (magnitude < 0.8f)
-        return 3;
-    return 4;
+    return std::clamp(static_cast<int>((magnitude - 0.05f) / 0.1f), 0, 9);
 }
 
 short* VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
