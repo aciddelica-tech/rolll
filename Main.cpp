@@ -3,9 +3,9 @@
 #include <cstring>
 
 HRESULT VDJ_API DllGetClassObject(
-    const GUID &rclsid,
-    const GUID &riid,
-    void **ppObject)
+    const GUID& rclsid,
+    const GUID& riid,
+    void** ppObject)
 {
     if (!ppObject)
         return E_POINTER;
@@ -22,6 +22,7 @@ HRESULT VDJ_API DllGetClassObject(
             sizeof(GUID)) == 0)
     {
         *ppObject = new LoopRollPlugin();
+
         return S_OK;
     }
 
