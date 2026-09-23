@@ -108,15 +108,18 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
 
     if (id == ID_FILTER_ROLL)
     {
-        const float distanceFromCenter = lengthControl_ - 0.5f;
-        if (std::abs(distanceFromCenter) < 0.05f)
+        const float offset = lengthControl_ - 0.5f;
+        if (std::abs(offset) < 0.05f)
         {
             std::snprintf(outParam, static_cast<size_t>(outParamSize), "0");
         }
         else
         {
-            std::snprintf(outParam, static_cast<size_t>(outParamSize), "-%s",
-                          lengthName(lengthIndex_));
+            const float amount = std::clamp((std::abs(offset) - 0.05f) / 0.45f, 0.0f, 1.0f);
+            const int frequency = static_cast<int>(std::lround(
+                20.0 * std::pow(15000.0 / 20.0, amount)));
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s%dHz",
+                          offset < 0.0f ? "<" : ">", frequency);
         }
         return S_OK;
     }
@@ -269,14 +272,14 @@ float LoopRollPlugin::processFilter(float sample, int channel)
     if (!filterEnabled_ || std::abs(offset) < 0.05f || SampleRate <= 0)
         return sample;
 
-    const float amount = std::clamp(std::abs(offset) * 2.0f, 0.0f, 1.0f);
-    const float cutoff = 20000.0f * std::pow(20.0f / 20000.0f, amount);
+    const float amount = std::clamp((std::abs(offset) - 0.05f) / 0.45f, 0.0f, 1.0f);
+    const float cutoff = 15000.0f * std::pow(20.0f / 15000.0f, amount);
     const float alpha = 1.0f - std::exp(
         -2.0f * 3.14159265358979323846f * cutoff /
         static_cast<float>(SampleRate));
     filterState_[channel] += alpha * (sample - filterState_[channel]);
 
-    if (offset > 0.0f)
+    if (offset < 0.0f)
         return filterState_[channel];
     return sample - filterState_[channel];
 }

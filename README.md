@@ -19,8 +19,9 @@ VirtualDJ SDK headers.
   direction selects negative loop lengths from `-400 ms` down to `-20 ms` in
   10 ms increments.
 - Loop Roll and filtering are enabled and disabled together.
-- Filter processing is bipolar: one side applies a low cut (high-pass),
-  the other applies a high cut (low-pass), and the center bypasses filtering.
+- Filter processing is bipolar: the left side displays `<20Hz` and applies a
+  low-pass/high cut, the right side displays `>15kHz` and applies a
+  high-pass/low cut, and the center bypasses filtering.
 - Loop capture is aligned to the host's beat grid using `SongPosBeats` and
   `SongBpm`.
 - Audio uses the stereo 16-bit buffer contract defined by `vdjDsp8.h`.
