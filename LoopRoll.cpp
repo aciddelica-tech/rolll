@@ -20,7 +20,10 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     // The skin maps 0..100% to 1/32..4 beats.
     lengthIndex_ = 3;
     lengthControl_ = indexToControl(lengthIndex_);
-    DeclareParameterSlider(&lengthControl_, ID_LENGTH, "Loop Roll", "Roll", lengthControl_);
+    strengthControl_ = 1.0f;
+    DeclareParameterSlider(&strengthControl_, ID_STRENGTH, "Loop Roll", "Strength", strengthControl_);
+    DeclareParameterSlider(&lengthControl_, ID_LENGTH, "Loop Roll", "Length", lengthControl_);
+    OnParameter(ID_STRENGTH);
     OnParameter(ID_LENGTH);
 
     return S_OK;
@@ -33,8 +36,8 @@ HRESULT VDJ_API LoopRollPlugin::OnGetPluginInfo(TVdjPluginInfo8* info)
 
     info->PluginName = "Loop Roll";
     info->Author = "Acid Delica";
-    info->Description = "Synchronized Loop Roll with 1/32 to 4 beat control";
-    info->Version = "2.0.0";
+    info->Description = "Synchronized Loop Roll with strength and 1/32 to 4 beat control";
+    info->Version = "2.1.0";
     info->Flags = 0x00;
     info->Bitmap = NULL;
     return S_OK;
@@ -47,31 +50,51 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
 
     pluginInterface->Type = VDJINTERFACE_SKIN;
     static const char kSkinXml[] =
-        "<Skin name=\"Loop Roll\" version=\"8\" width=\"420\" height=\"190\">"
+        "<Skin name=\"Loop Roll\" version=\"8\" width=\"520\" height=\"240\">"
         "<Copyright>Acid Delica</Copyright>"
-        "<button action=\"effect active\"><size width=\"28\" height=\"28\"/><pos x=\"10\" y=\"8\"/>"
-        "<up x=\"0\" y=\"0\"/><selected x=\"0\" y=\"0\"/><Tooltip>Activate Loop Roll</Tooltip></button>"
+        "<button action=\"effect active\"><pos x=\"10\" y=\"8\"/><size width=\"28\" height=\"28\"/>"
+        "<off color=\"#404040\" border=\"#AAAAAA\" border_size=\"2\"/>"
+        "<on color=\"green\" border=\"white\" border_size=\"2\"/>"
+        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"ON\"/>"
+        "<Tooltip>Activate Loop Roll</Tooltip></button>"
         "<textzone><size width=\"320\" height=\"24\"/><pos x=\"48\" y=\"10\"/>"
         "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" align=\"left\" action=\"get_effect_slider_text 1\"/></textzone>"
-        "<slider action=\"effect slider 1\" orientation=\"horizontal\"><pos x=\"20\" y=\"48\" width=\"380\" height=\"30\"/>"
-        "<fader><pos x=\"0\" y=\"0\" width=\"380\" height=\"30\"/></fader></slider>"
-        "<button action=\"effect slider 1 0%\"><size width=\"45\" height=\"30\"/><pos x=\"10\" y=\"92\"/>"
+        "<textzone><size width=\"120\" height=\"20\"/><pos x=\"20\" y=\"42\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Strength\"/></textzone>"
+        "<slider action=\"effect slider 1\" orientation=\"horizontal\"><pos x=\"20\" y=\"62\"/>"
+        "<size width=\"220\" height=\"26\"/>"
+        "<off height=\"8\" color=\"#404040\" border=\"#888888\" border_size=\"1\"/>"
+        "<on height=\"8\" color=\"marine\" border=\"#AAAAAA\" border_size=\"1\"/>"
+        "<fader><size width=\"14\" height=\"26\"/><off color=\"white\" border=\"#202020\" border_size=\"1\"/></fader></slider>"
+        "<textzone><size width=\"80\" height=\"20\"/><pos x=\"250\" y=\"65\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" align=\"right\" action=\"get_effect_slider_text 1\"/></textzone>"
+        "<textzone><size width=\"120\" height=\"20\"/><pos x=\"20\" y=\"102\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Length\"/></textzone>"
+        "<button action=\"effect slider 2 0%\"><size width=\"58\" height=\"32\"/><pos x=\"20\" y=\"130\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/32\"/></button>"
-        "<button action=\"effect slider 1 14.2857%\"><size width=\"45\" height=\"30\"/><pos x=\"59\" y=\"92\"/>"
+        "<button action=\"effect slider 2 14.2857%\"><size width=\"58\" height=\"32\"/><pos x=\"82\" y=\"130\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/16\"/></button>"
-        "<button action=\"effect slider 1 28.5714%\"><size width=\"45\" height=\"30\"/><pos x=\"108\" y=\"92\"/>"
+        "<button action=\"effect slider 2 28.5714%\"><size width=\"58\" height=\"32\"/><pos x=\"144\" y=\"130\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/8\"/></button>"
-        "<button action=\"effect slider 1 42.8571%\"><size width=\"45\" height=\"30\"/><pos x=\"157\" y=\"92\"/>"
+        "<button action=\"effect slider 2 42.8571%\"><size width=\"58\" height=\"32\"/><pos x=\"206\" y=\"130\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/4\"/></button>"
-        "<button action=\"effect slider 1 57.1429%\"><size width=\"45\" height=\"30\"/><pos x=\"206\" y=\"92\"/>"
+        "<button action=\"effect slider 2 57.1429%\"><size width=\"58\" height=\"32\"/><pos x=\"268\" y=\"130\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/2\"/></button>"
-        "<button action=\"effect slider 1 71.4286%\"><size width=\"45\" height=\"30\"/><pos x=\"255\" y=\"92\"/>"
+        "<button action=\"effect slider 2 71.4286%\"><size width=\"58\" height=\"32\"/><pos x=\"330\" y=\"130\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1 beat\"/></button>"
-        "<button action=\"effect slider 1 85.7143%\"><size width=\"45\" height=\"30\"/><pos x=\"304\" y=\"92\"/>"
+        "<button action=\"effect slider 2 85.7143%\"><size width=\"58\" height=\"32\"/><pos x=\"392\" y=\"130\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"2 beats\"/></button>"
-        "<button action=\"effect slider 1 100%\"><size width=\"45\" height=\"30\"/><pos x=\"353\" y=\"92\"/>"
+        "<button action=\"effect slider 2 100%\"><size width=\"58\" height=\"32\"/><pos x=\"454\" y=\"130\"/>"
+        "<off color=\"#303030\" border=\"#666666\" border_size=\"1\"/><on color=\"marine\" border=\"white\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"4 beats\"/></button>"
-        "<textzone><size width=\"400\" height=\"20\"/><pos x=\"10\" y=\"142\"/>"
+        "<textzone><size width=\"500\" height=\"20\"/><pos x=\"10\" y=\"178\"/>"
         "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"center\" format=\"1/32  1/16  1/8  1/4  1/2  1  2  4 beats\"/></textzone>"
         "</Skin>";
     pluginInterface->Xml = kSkinXml;
@@ -82,7 +105,11 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
 
 HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
 {
-    if (id == ID_LENGTH)
+    if (id == ID_STRENGTH)
+    {
+        strengthControl_ = std::clamp(strengthControl_, 0.0f, 1.0f);
+    }
+    else if (id == ID_LENGTH)
     {
         lengthIndex_ = controlToIndex(lengthControl_);
         lengthControl_ = indexToControl(lengthIndex_);
@@ -97,6 +124,12 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
     if (!outParam || outParamSize <= 0)
         return E_POINTER;
 
+    if (id == ID_STRENGTH)
+    {
+        std::snprintf(outParam, static_cast<size_t>(outParamSize), "%.0f%%",
+                      static_cast<double>(strengthControl_ * 100.0f));
+        return S_OK;
+    }
     if (id == ID_LENGTH)
     {
         std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s", lengthName(lengthIndex_));
@@ -210,9 +243,19 @@ short* VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
         if (GetSongBuffer(sourcePosition, chunk, &source) != S_OK || !source)
             return nullptr;
 
-        std::memcpy(output_.data() + static_cast<size_t>(processed) * 2,
-                    source,
-                    static_cast<size_t>(chunk) * 2 * sizeof(short));
+        short* dry = nullptr;
+        if (GetSongBuffer(absolutePosition, chunk, &dry) != S_OK || !dry)
+            return nullptr;
+
+        const float wet = strengthControl_;
+        const float dryMix = 1.0f - wet;
+        for (int i = 0; i < chunk * 2; ++i)
+        {
+            const float mixed = static_cast<float>(dry[i]) * dryMix +
+                                static_cast<float>(source[i]) * wet;
+            output_[static_cast<size_t>(processed) * 2 + static_cast<size_t>(i)] =
+                static_cast<short>(std::clamp(mixed, -32768.0f, 32767.0f));
+        }
         processed += chunk;
     }
 

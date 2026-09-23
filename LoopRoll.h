@@ -20,12 +20,14 @@ public:
 private:
     enum ParameterId
     {
-        ID_LENGTH = 1
+        ID_STRENGTH = 1,
+        ID_LENGTH = 2
     };
 
     static constexpr int kLengthCount = 8;
 
     // Continuous UI value, quantized to 8 Loop Roll lengths.
+    float strengthControl_ = 1.0f;
     float lengthControl_ = 3.0f / 7.0f;
     int lengthIndex_ = 3; // 1/4 beat by default
 
