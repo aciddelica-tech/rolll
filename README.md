@@ -21,6 +21,8 @@ VirtualDJ SDK headers.
 - Strength controls the dry/wet mix from 0% to 100%.
 - Filter is a synchronized control: moving it or Length moves the other
   slider to the same position.
+- Filter processing is bipolar: one side applies a low cut (high-pass),
+  the other applies a high cut (low-pass), and the center bypasses filtering.
 - Loop capture is aligned to the host's beat grid using `SongPosBeats` and
   `SongBpm`.
 - Audio uses the stereo 16-bit buffer contract defined by `vdjDsp8.h`.

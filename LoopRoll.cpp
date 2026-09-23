@@ -14,6 +14,7 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     active_ = false;
     loopStart_ = 0;
     loopSamples_ = 0;
+    resetFilter();
     output_.clear();
 
     // Length is bipolar: center is zero and either direction selects the
@@ -179,6 +180,7 @@ HRESULT VDJ_API LoopRollPlugin::OnStart()
         return E_FAIL;
 
     loopSamples_ = requestedLoopSamples();
+    resetFilter();
     if (loopSamples_ <= 0)
     {
         active_ = false;
@@ -197,6 +199,7 @@ HRESULT VDJ_API LoopRollPlugin::OnStart()
 HRESULT VDJ_API LoopRollPlugin::OnStop()
 {
     active_ = false;
+    resetFilter();
     output_.clear();
     return S_OK;
 }
@@ -286,11 +289,37 @@ short* VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
         {
             const float mixed = static_cast<float>(dry[i]) * dryMix +
                                 static_cast<float>(source[i]) * wet;
+            const int channel = i % 2;
+            const float filtered = processFilter(mixed, channel);
             output_[static_cast<size_t>(processed) * 2 + static_cast<size_t>(i)] =
-                static_cast<short>(std::clamp(mixed, -32768.0f, 32767.0f));
+                static_cast<short>(std::clamp(filtered, -32768.0f, 32767.0f));
         }
         processed += chunk;
     }
 
     return output_.data();
+}
+
+void LoopRollPlugin::resetFilter()
+{
+    filterState_[0] = 0.0f;
+    filterState_[1] = 0.0f;
+}
+
+float LoopRollPlugin::processFilter(float sample, int channel)
+{
+    const float offset = filterControl_ - 0.5f;
+    if (std::abs(offset) < 0.05f || SampleRate <= 0)
+        return sample;
+
+    const float amount = std::clamp(std::abs(offset) * 2.0f, 0.0f, 1.0f);
+    const float cutoff = 20000.0f * std::pow(20.0f / 20000.0f, amount);
+    const float alpha = 1.0f - std::exp(
+        -2.0f * 3.14159265358979323846f * cutoff /
+        static_cast<float>(SampleRate));
+    filterState_[channel] += alpha * (sample - filterState_[channel]);
+
+    if (offset > 0.0f)
+        return filterState_[channel];
+    return sample - filterState_[channel];
 }

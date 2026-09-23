@@ -37,9 +37,12 @@ private:
     bool active_ = false;
     int loopStart_ = 0;
     int loopSamples_ = 0;
+    float filterState_[2] = {};
     std::vector<short> output_;
 
     int requestedLoopSamples() const;
+    void resetFilter();
+    float processFilter(float sample, int channel);
     static const char* lengthName(int index);
     static int lengthMilliseconds(int index);
     static int controlToIndex(float value);
