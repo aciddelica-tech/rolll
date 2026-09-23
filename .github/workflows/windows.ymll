@@ -1,0 +1,95 @@
+name: Windows DLL
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download VirtualDJ SDK
+        shell: powershell
+        run: |
+          $url = "https://virtualdj.com/developers/VirtualDJ8_SDK_20211003.zip"
+          $zip = "$env:RUNNER_TEMP\VirtualDJ_SDK.zip"
+          $sdk = "$env:RUNNER_TEMP\VirtualDJ_SDK"
+
+          Invoke-WebRequest `
+            -Uri $url `
+            -OutFile $zip
+
+          if (Test-Path $sdk) {
+            Remove-Item $sdk -Recurse -Force
+          }
+
+          Expand-Archive `
+            -Path $zip `
+            -DestinationPath $sdk
+
+          $header = Get-ChildItem `
+            -Path $sdk `
+            -Recurse `
+            -Filter "vdjPlugin8.h" `
+            | Select-Object -First 1
+
+          if (-not $header) {
+            Write-Error "vdjPlugin8.h was not found in the SDK"
+            exit 1
+          }
+
+          $sdkRoot = $header.Directory.FullName
+
+          "VDJ_SDK_DIR=$sdkRoot" >> $env:GITHUB_ENV
+
+          Write-Host "VirtualDJ SDK: $sdkRoot"
+
+      - name: Configure CMake
+        shell: powershell
+        run: |
+          cmake -S . -B build `
+            -G "Visual Studio 17 2022" `
+            -A x64 `
+            -DVDJ_SDK_DIR="$env:VDJ_SDK_DIR"
+
+      - name: Build DLL
+        shell: powershell
+        run: |
+          cmake --build build `
+            --config Release `
+            --parallel
+
+      - name: Verify DLL
+        shell: powershell
+        run: |
+          $dll = Get-ChildItem `
+            -Path build `
+            -Recurse `
+            -Filter "rolll.dll" `
+            | Select-Object -First 1
+
+          if (-not $dll) {
+            Write-Error "rolll.dll was not produced"
+            exit 1
+          }
+
+          Write-Host "DLL found:"
+          Write-Host $dll.FullName
+
+          Get-FileHash `
+            $dll.FullName `
+            -Algorithm SHA256
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: rolll-windows-x64
+          path: |
+            build/**/rolll.dll
+          if-no-files-found: error
