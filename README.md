@@ -6,8 +6,8 @@ VirtualDJ SDK headers.
 
 ## Contents
 
-- `LoopRoll.cpp` / `LoopRoll.h` — plugin implementation, strength control, and
-  centered millisecond loop-length control.
+- `LoopRoll.cpp` / `LoopRoll.h` — Filter Roll plugin implementation with one
+  centered bipolar control.
 - `Main.cpp` — VirtualDJ COM entry point.
 - `VirtualDJAdapter.todo.h` — SDK integration notes.
 - `.github/workflows/windows.yml` — Windows workflow that builds and archives
@@ -15,12 +15,10 @@ VirtualDJ SDK headers.
 
 ## Behavior
 
-- The Length control is off at its center (`0 ms`). Moving either direction
-  selects 39 negative steps from `-400 ms` down to `-20 ms` in 10 ms
-  increments.
-- Strength controls the dry/wet mix from 0% to 100%.
-- Filter is a synchronized control: moving it or Length moves the other
-  slider to the same position.
+- The single Filter Roll control is off at its center (`0 ms`). Moving either
+  direction selects negative loop lengths from `-400 ms` down to `-20 ms` in
+  10 ms increments.
+- Loop Roll and filtering are enabled and disabled together.
 - Filter processing is bipolar: one side applies a low cut (high-pass),
   the other applies a high cut (low-pass), and the center bypasses filtering.
 - Loop capture is aligned to the host's beat grid using `SongPosBeats` and
