@@ -19,7 +19,9 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     // Length is bipolar: center is zero and either direction selects the
     // same beat length by its absolute position.
     lengthIndex_ = 0;
-    lengthControl_ = 0.0f;
+    // VirtualDJ slider values are normalized to 0..1. The visual center is
+    // represented by 0.5 and exposed to the user as length 0.
+    lengthControl_ = 0.5f;
     strengthControl_ = 1.0f;
     DeclareParameterSlider(&strengthControl_, ID_STRENGTH, "Loop Roll", "Strength", strengthControl_);
     DeclareParameterSlider(&lengthControl_, ID_LENGTH, "Loop Roll", "Length", lengthControl_);
@@ -121,14 +123,15 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
     }
     if (id == ID_LENGTH)
     {
-        if (std::abs(lengthControl_) < 0.05f)
+        const float distanceFromCenter = lengthControl_ - 0.5f;
+        if (std::abs(distanceFromCenter) < 0.05f)
         {
             std::snprintf(outParam, static_cast<size_t>(outParamSize), "0");
         }
         else
         {
             std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s%s",
-                          lengthControl_ < 0.0f ? "-" : "", lengthName(lengthIndex_));
+                          distanceFromCenter < 0.0f ? "-" : "", lengthName(lengthIndex_));
         }
         return S_OK;
     }
@@ -174,7 +177,7 @@ int LoopRollPlugin::requestedLoopSamples() const
     if (SongBpm <= 0)
         return 0;
 
-    if (std::abs(lengthControl_) < 0.05f)
+    if (std::abs(lengthControl_ - 0.5f) < 0.05f)
         return 0;
 
     return std::max(1, static_cast<int>(
@@ -198,14 +201,14 @@ float LoopRollPlugin::lengthBeats(int index)
 
 int LoopRollPlugin::controlToIndex(float value)
 {
-    const float magnitude = std::abs(std::clamp(value, -1.0f, 1.0f));
+    const float magnitude = std::abs(std::clamp(value, 0.0f, 1.0f) - 0.5f) * 2.0f;
     if (magnitude < 0.05f)
         return 0;
-    if (magnitude < 0.25f)
+    if (magnitude < 0.125f)
         return 0;
-    if (magnitude < 0.5f)
+    if (magnitude < 0.375f)
         return 1;
-    if (magnitude < 0.75f)
+    if (magnitude < 0.625f)
         return 2;
     return 3;
 }
