@@ -18,7 +18,7 @@ public:
     short* VDJ_API OnGetSongBuffer(int pos, int nb) override;
 
 private:
-    static constexpr int kLengthCount = 40;
+    static constexpr int kLengthCount = 7;
 
     enum ParameterId
     {
@@ -43,6 +43,6 @@ private:
     void resetFilter();
     float processFilter(float sample, int channel);
     static const char* lengthName(int index);
-    static int lengthMilliseconds(int index);
+    static double lengthBeats(int index);
     static int controlToIndex(float value);
 };

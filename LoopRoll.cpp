@@ -26,7 +26,7 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     lengthControl_ = 0.5f;
     filterControl_ = lengthControl_;
     strengthControl_ = 1.0f;
-    DeclareParameterSlider(&lengthControl_, ID_FILTER_ROLL, "Filter Roll", "Filter Roll", lengthControl_);
+    DeclareParameterSlider(&lengthControl_, ID_FILTER_ROLL, "Loop Roll", "Length", lengthControl_);
     OnParameter(ID_FILTER_ROLL);
 
     return S_OK;
@@ -70,7 +70,7 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<text font=\"arial\" size=\"13\" color=\"white\" align=\"center\" format=\"X\"/>"
         "<Tooltip>Close Loop Roll</Tooltip></button>"
         "<textzone><pos x=\"48\" y=\"10\"/><size width=\"300\" height=\"24\"/>"
-        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" format=\"Filter Roll\"/></textzone>"
+        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" format=\"Length\"/></textzone>"
         "<slider action=\"effect slider 1\" orientation=\"round\" frommiddle=\"true\"><pos x=\"172\" y=\"55\"/><size width=\"46\" height=\"46\"/>"
         "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
         "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
@@ -115,11 +115,8 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
         }
         else
         {
-            const float amount = std::clamp((std::abs(offset) - 0.05f) / 0.45f, 0.0f, 1.0f);
-            const int frequency = static_cast<int>(std::lround(
-                20.0 * std::pow(15000.0 / 20.0, amount)));
-            std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s%dHz",
-                          offset < 0.0f ? "<" : ">", frequency);
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s bt",
+                          lengthName(lengthIndex_));
         }
         return S_OK;
     }
@@ -173,27 +170,27 @@ int LoopRollPlugin::requestedLoopSamples() const
         return 0;
 
     return std::max(1, static_cast<int>(
-        std::llround(static_cast<double>(SampleRate) *
-                     static_cast<double>(lengthMilliseconds(lengthIndex_)) /
-                     1000.0)));
+        std::llround(static_cast<double>(lengthBeats(lengthIndex_)) *
+                     static_cast<double>(SongBpm))));
 }
 
 const char* LoopRollPlugin::lengthName(int index)
 {
     static const char* names[kLengthCount] =
     {
-        "0", "400", "390", "380", "370", "360", "350", "340", "330", "320",
-        "310", "300", "290", "280", "270", "260", "250", "240", "230", "220",
-        "210", "200", "190", "180", "170", "160", "150", "140", "130", "120",
-        "110", "100", "90", "80", "70", "60", "50", "40", "30", "20"
+        "0", "3/4", "1/2", "1/4", "1/8", "1/16", "1/32"
     };
     return names[std::clamp(index, 0, kLengthCount - 1)];
 }
 
-int LoopRollPlugin::lengthMilliseconds(int index)
+double LoopRollPlugin::lengthBeats(int index)
 {
     const int clampedIndex = std::clamp(index, 0, kLengthCount - 1);
-    return clampedIndex == 0 ? 0 : 410 - clampedIndex * 10;
+    static constexpr double beats[kLengthCount] =
+    {
+        0.0, 0.75, 0.5, 0.25, 0.125, 0.0625, 0.03125
+    };
+    return beats[clampedIndex];
 }
 
 int LoopRollPlugin::controlToIndex(float value)

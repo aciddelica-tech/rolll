@@ -15,9 +15,8 @@ VirtualDJ SDK headers.
 
 ## Behavior
 
-- The single Filter Roll control is off at its center (`0 ms`). Moving either
-  direction selects negative loop lengths from `-400 ms` down to `-20 ms` in
-  10 ms increments.
+- The Length control is off at its center (`0`). Moving either direction
+  selects `3/4`, `1/2`, `1/4`, `1/8`, `1/16`, and `1/32` beats.
 - Loop Roll and filtering are enabled and disabled together.
 - Filter processing is bipolar: the left side displays `<20Hz` and applies a
   low-pass/high cut, the right side displays `>15kHz` and applies a
