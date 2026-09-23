@@ -13,7 +13,12 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     return S_OK;
 }
 
-HRESULT VDJ_API LoopRollPlugin::OnGetPluginInfo(TVdjPluginInfo8 *info)
+HRESULT VDJ_API LoopRollPlugin::info->PluginName = "Loop Roll";
+info->Author = "Acid Delica";
+info->Description = "Buffer-based synchronized Loop Roll for VirtualDJ";
+info->Version = "1.0.0";
+info->Flags = 0x00;
+info->Bitmap = NULL;
 {
     if (!info)
         return E_POINTER;
