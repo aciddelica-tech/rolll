@@ -1,0 +1,43 @@
+*** Begin Patch
+*** Update File: LoopRoll.cpp
+@@
+-    pluginInterface->Xml = ...
++    // Use the VirtualDJ SDK skin XML structure: <size>/<pos> elements and
++    // the standard "effect slider 1" action syntax.
++    static const char kSkinXml[] =
++        "<Skin name=\"Loop Roll\" version=\"8\" width=\"420\" height=\"190\">"
++        "<Copyright>Acid Delica</Copyright>"
++        "<button action=\"effect active\"><size width=\"28\" height=\"28\"/><pos x=\"10\" y=\"8\"/>"
++        "<up x=\"0\" y=\"0\"/><selected x=\"0\" y=\"0\"/><Tooltip>Activate Loop Roll</Tooltip></button>"
++        "<textzone><size width=\"320\" height=\"24\"/><pos x=\"48\" y=\"10\"/>"
++        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" align=\"left\" action=\"get_effect_slider_text 1\"/></textzone>"
++        "<slider action=\"effect slider 1\" orientation=\"horizontal\"><pos x=\"20\" y=\"48\" width=\"380\" height=\"30\"/>"
++        "<fader><pos x=\"0\" y=\"0\" width=\"380\" height=\"30\"/></fader></slider>"
++        "<button action=\"effect slider 1 0%\"><size width=\"45\" height=\"30\"/><pos x=\"10\" y=\"92\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/32\"/></button>"
++        "<button action=\"effect slider 1 14.2857%\"><size width=\"45\" height=\"30\"/><pos x=\"59\" y=\"92\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/16\"/></button>"
++        "<button action=\"effect slider 1 28.5714%\"><size width=\"45\" height=\"30\"/><pos x=\"108\" y=\"92\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/8\"/></button>"
++        "<button action=\"effect slider 1 42.8571%\"><size width=\"45\" height=\"30\"/><pos x=\"157\" y=\"92\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/4\"/></button>"
++        "<button action=\"effect slider 1 57.1429%\"><size width=\"45\" height=\"30\"/><pos x=\"206\" y=\"92\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1/2\"/></button>"
++        "<button action=\"effect slider 1 71.4286%\"><size width=\"45\" height=\"30\"/><pos x=\"255\" y=\"92\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"1 beat\"/></button>"
++        "<button action=\"effect slider 1 85.7143%\"><size width=\"45\" height=\"30\"/><pos x=\"304\" y=\"92\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"2 beats\"/></button>"
++        "<button action=\"effect slider 1 100%\"><size width=\"45\" height=\"30\"/><pos x=\"353\" y=\"92\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"white\" align=\"center\" format=\"4 beats\"/></button>"
++        "<textzone><size width=\"400\" height=\"20\"/><pos x=\"10\" y=\"142\"/>"
++        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"center\" format=\"1/32  1/16  1/8  1/4  1/2  1  2  4 beats\"/></textzone>"
++        "</Skin>";
++    pluginInterface->Xml = const_cast<char*>(kSkinXml);
+@@
+-    loopStart_ = (SongPos / loopSamples_) * loopSamples_;
++    const double gridBeats =
++        static_cast<double>(loopSamples_) / static_cast<double>(SongBpm);
++    const double gridIndex = std::floor(SongPosBeats / gridBeats);
++    loopStart_ = static_cast<int>(
++        std::llround(gridIndex * static_cast<double>(loopSamples_)));
+*** End Patch
