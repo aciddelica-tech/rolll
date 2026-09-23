@@ -87,7 +87,7 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<textzone><pos x=\"72\" y=\"122\"/><size width=\"110\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 2\"/></textzone>"
         "<textzone><pos x=\"205\" y=\"150\"/><size width=\"170\" height=\"18\"/>"
-        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"-310 -320 -330 -340 -350 -360 -370 -380 -390 -400 -410 -420 -430 -440 -450 -460 -470 -480 -490 -500  0  500 490 480 470 460 450 440 430 420 410 400 390 380 370 360 350 340 330 320 310 ms\"/></textzone>"
+        "<text font=\"arial\" size=\"11\" color=\"#AAAAAA\" align=\"left\" format=\"-190 -180 -170 -160 -150 -140 -130 -120 -110 -100 -90 -80 -70 -60 -50 -40 -30 -20 -10  0  10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 ms\"/></textzone>"
         "</Skin>";
     pluginInterface->Xml = kSkinXml;
     pluginInterface->ImageBuffer = const_cast<unsigned char*>(kSkinPng);
@@ -190,8 +190,8 @@ const char* LoopRollPlugin::lengthName(int index)
 {
     static const char* names[kLengthCount] =
     {
-        "500", "490", "480", "470", "460", "450", "440", "430", "420", "410",
-        "400", "390", "380", "370", "360", "350", "340", "330", "320", "310"
+        "0", "10", "20", "30", "40", "50", "60", "70", "80", "90",
+        "100", "110", "120", "130", "140", "150", "160", "170", "180", "190"
     };
     return names[std::clamp(index, 0, kLengthCount - 1)];
 }
@@ -199,7 +199,7 @@ const char* LoopRollPlugin::lengthName(int index)
 int LoopRollPlugin::lengthMilliseconds(int index)
 {
     const int clampedIndex = std::clamp(index, 0, kLengthCount - 1);
-    return 500 - clampedIndex * 10;
+    return clampedIndex * 10;
 }
 
 int LoopRollPlugin::controlToIndex(float value)

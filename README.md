@@ -6,8 +6,8 @@ VirtualDJ SDK headers.
 
 ## Contents
 
-- `LoopRoll.cpp` / `LoopRoll.h` — plugin implementation and eight-position
-  loop-length control.
+- `LoopRoll.cpp` / `LoopRoll.h` — plugin implementation, strength control, and
+  centered millisecond loop-length control.
 - `Main.cpp` — VirtualDJ COM entry point.
 - `VirtualDJAdapter.todo.h` — SDK integration notes.
 - `.github/workflows/windows.yml` — Windows workflow that builds and archives
@@ -15,8 +15,10 @@ VirtualDJ SDK headers.
 
 ## Behavior
 
-- Eight loop lengths are available: 1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, and 4
-  beats.
+- The Length control is off at its center (`0 ms`). Moving either direction
+  selects 20 mirrored steps from `10 ms` through `190 ms`, increasing by
+  `10 ms` per step.
+- Strength controls the dry/wet mix from 0% to 100%.
 - Loop capture is aligned to the host's beat grid using `SongPosBeats` and
   `SongBpm`.
 - Audio uses the stereo 16-bit buffer contract defined by `vdjDsp8.h`.
