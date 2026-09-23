@@ -92,9 +92,7 @@ HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
         lengthControl_ = std::clamp(lengthControl_, 0.0f, 1.0f);
         filterControl_ = lengthControl_;
         lengthIndex_ = controlToIndex(lengthControl_);
-        filterEnabled_ = lengthIndex_ > 0;
-        if (!filterEnabled_)
-            resetFilter();
+        filterEnabled_ = active_;
         if (active_)
             loopSamples_ = requestedLoopSamples();
     }
@@ -136,10 +134,10 @@ HRESULT VDJ_API LoopRollPlugin::OnStart()
 
     loopSamples_ = requestedLoopSamples();
     resetFilter();
+    filterEnabled_ = true;
     if (loopSamples_ <= 0)
     {
-        active_ = false;
-        filterEnabled_ = false;
+        active_ = true;
         return S_OK;
     }
 
