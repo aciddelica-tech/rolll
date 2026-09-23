@@ -33,6 +33,7 @@ private:
     float lengthControl_ = 0.5f;
     float filterControl_ = 0.5f;
     int lengthIndex_ = 0;
+    bool filterEnabled_ = false;
 
     bool active_ = false;
     int loopStart_ = 0;

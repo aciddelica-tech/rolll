@@ -15,6 +15,7 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     loopStart_ = 0;
     loopSamples_ = 0;
     resetFilter();
+    filterEnabled_ = false;
     output_.clear();
 
     // Length is bipolar: center is zero and either direction selects the
@@ -116,6 +117,9 @@ HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
     {
         filterControl_ = lengthControl_;
         lengthIndex_ = controlToIndex(lengthControl_);
+        filterEnabled_ = lengthIndex_ > 0;
+        if (!filterEnabled_)
+            resetFilter();
         if (active_)
             loopSamples_ = requestedLoopSamples();
     }
@@ -124,6 +128,9 @@ HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
         filterControl_ = std::clamp(filterControl_, 0.0f, 1.0f);
         lengthControl_ = filterControl_;
         lengthIndex_ = controlToIndex(lengthControl_);
+        filterEnabled_ = lengthIndex_ > 0;
+        if (!filterEnabled_)
+            resetFilter();
         if (active_)
             loopSamples_ = requestedLoopSamples();
     }
@@ -184,6 +191,7 @@ HRESULT VDJ_API LoopRollPlugin::OnStart()
     if (loopSamples_ <= 0)
     {
         active_ = false;
+        filterEnabled_ = false;
         return S_OK;
     }
 
@@ -199,6 +207,7 @@ HRESULT VDJ_API LoopRollPlugin::OnStart()
 HRESULT VDJ_API LoopRollPlugin::OnStop()
 {
     active_ = false;
+    filterEnabled_ = false;
     resetFilter();
     output_.clear();
     return S_OK;
@@ -309,7 +318,7 @@ void LoopRollPlugin::resetFilter()
 float LoopRollPlugin::processFilter(float sample, int channel)
 {
     const float offset = filterControl_ - 0.5f;
-    if (std::abs(offset) < 0.05f || SampleRate <= 0)
+    if (!filterEnabled_ || std::abs(offset) < 0.05f || SampleRate <= 0)
         return sample;
 
     const float amount = std::clamp(std::abs(offset) * 2.0f, 0.0f, 1.0f);
