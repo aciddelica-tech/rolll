@@ -1,148 +1,158 @@
-/*
- * LoopRoll.cpp — VirtualDJ v8 Windows x64 audio-effect starter
- *
- * IMPORTANT:
- * This is an algorithm/implementation starter, not a directly loadable DLL.
- * VirtualDJ's exact plugin ABI, exported entry points, parameter declarations,
- * and audio callback signatures must match the SDK headers for your SDK version.
- * Add this DSP class to the SDK's official audio-effect plugin template.
- *
- * Behavior:
- * - Dry/Wet mix (0..100%)
- * - Loop length in bars: 1/32, 1/16, 1/8, 1/4, 1/2, 3/4, 1, 2, 4
- * - Loop length is interpreted as musical bars, converted using BPM and
- *   time signature numerator/denominator.
- *
- * Host integration requirements:
- * 1. Feed the class the host's current BPM and time signature.
- * 2. Call process() on interleaved or planar float audio as appropriate.
- * 3. On effect activation, capture/refresh the loop buffer at the host's
- *    beat/bar boundary, and use host beat-phase/transport data for exact sync.
- * 4. Map host slider parameters to setWet() and setLengthIndex().
- */
+#include "LoopRoll.h"
 
 #include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <vector>
+#include <cstring>
 
-class LoopRollDSP {
-public:
-    enum LengthIndex {
-        BAR_1_32 = 0,
-        BAR_1_16,
-        BAR_1_8,
-        BAR_1_4,
-        BAR_1_2,
-        BAR_3_4,
-        BAR_1,
-        BAR_2,
-        BAR_4,
-        LENGTH_COUNT
+HRESULT VDJ_API LoopRollPlugin::OnLoad()
+{
+    active_ = false;
+    loopStart_ = 0;
+    loopSamples_ = 0;
+    output_.clear();
+
+    return S_OK;
+}
+
+HRESULT VDJ_API LoopRollPlugin::OnGetPluginInfo(TVdjPluginInfo8 *info)
+{
+    if (!info)
+        return E_POINTER;
+
+    std::memset(info, 0, sizeof(TVdjPluginInfo8));
+
+    std::strncpy(info->Name, "Loop Roll", sizeof(info->Name) - 1);
+    std::strncpy(info->Author, "Acid Delica", sizeof(info->Author) - 1);
+    std::strncpy(
+        info->Description,
+        "Buffer-based synchronized Loop Roll for VirtualDJ",
+        sizeof(info->Description) - 1
+    );
+    std::strncpy(info->Version, "1.0.0", sizeof(info->Version) - 1);
+
+    return S_OK;
+}
+
+ULONG VDJ_API LoopRollPlugin::Release()
+{
+    delete this;
+    return 0;
+}
+
+HRESULT VDJ_API LoopRollPlugin::OnStart()
+{
+    if (SongBpm <= 0)
+        return E_FAIL;
+
+    loopSamples_ = requestedLoopSamples();
+
+    if (loopSamples_ <= 0)
+        return E_FAIL;
+
+    const int currentSample =
+        static_cast<int>(SongPosBeats * SongBpm);
+
+    // Start from the previous complete loop grid position.
+    loopStart_ =
+        std::max(0, (currentSample / loopSamples_) * loopSamples_);
+
+    active_ = true;
+
+    return S_OK;
+}
+
+HRESULT VDJ_API LoopRollPlugin::OnStop()
+{
+    active_ = false;
+    output_.clear();
+
+    return S_OK;
+}
+
+int LoopRollPlugin::requestedLoopSamples() const
+{
+    if (SongBpm <= 0)
+        return 0;
+
+    // SongBpm is the number of samples between consecutive beats.
+    static const int numerator[] = {
+        1, 1, 1, 1, 1, 3, 1, 2, 4
     };
 
-    LoopRollDSP() : wet_(1.0f), lengthIndex_(BAR_1_4),
-                    bpm_(120.0), beatsPerBar_(4.0), sampleRate_(44100.0),
-                    writePos_(0), loopFrames_(0), active_(false), captured_(false) {}
+    static const int denominator[] = {
+        32, 16, 8, 4, 2, 4, 1, 1, 1
+    };
 
-    void setWet(float percent) {
-        wet_ = std::clamp(percent / 100.0f, 0.0f, 1.0f);
+    const int index = std::clamp(length_, 0, 8);
+
+    const double samples =
+        static_cast<double>(SongBpm) *
+        static_cast<double>(numerator[index]) /
+        static_cast<double>(denominator[index]);
+
+    return std::max(1, static_cast<int>(samples));
+}
+
+short *VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
+{
+    if (nb <= 0)
+        return nullptr;
+
+    output_.resize(static_cast<size_t>(nb) * 2);
+
+    if (!active_ || loopSamples_ <= 0)
+    {
+        short *source = nullptr;
+
+        if (GetSongBuffer(pos, nb, &source) != S_OK || !source)
+            return nullptr;
+
+        std::memcpy(
+            output_.data(),
+            source,
+            static_cast<size_t>(nb) * 2 * sizeof(short)
+        );
+
+        return output_.data();
     }
 
-    void setLengthIndex(int index) {
-        lengthIndex_ = std::clamp(index, 0, LENGTH_COUNT - 1);
-        recalcLoopFrames();
-    }
+    int processed = 0;
 
-    void setTempo(double bpm, double beatsPerBar = 4.0) {
-        if (bpm > 0.0) bpm_ = bpm;
-        if (beatsPerBar > 0.0) beatsPerBar_ = beatsPerBar;
-        recalcLoopFrames();
-    }
+    while (processed < nb)
+    {
+        const int absolutePosition = pos + processed;
 
-    void prepare(double sampleRate, int channels) {
-        sampleRate_ = sampleRate > 0.0 ? sampleRate : 44100.0;
-        channels_ = std::max(1, channels);
-        recalcLoopFrames();
-        buffer_.assign(loopFrames_ * static_cast<std::size_t>(channels_), 0.0f);
-        writePos_ = 0;
-        active_ = false;
-    }
+        int relative =
+            (absolutePosition - loopStart_) % loopSamples_;
 
-    // Call when the host activates/deactivates the effect.
-    // For sample-accurate musical sync, activate at the host's beat boundary.
-    void setActive(bool active) {
-        if (active && !active_) writePos_ = 0;
-        active_ = active;
-    }
+        if (relative < 0)
+            relative += loopSamples_;
 
-    // Basic ring-buffer roll. `input` and `output` are interleaved float samples.
-    // `frames` is the number of audio frames, not the number of samples.
-    void process(const float* input, float* output, std::size_t frames) {
-        if (!input || !output || channels_ < 1) return;
-        const std::size_t ch = static_cast<std::size_t>(channels_);
-        if (!active_ || buffer_.empty() || loopFrames_ == 0) {
-            std::copy(input, input + frames * ch, output);
-            return;
+        const int sourcePosition =
+            loopStart_ + relative;
+
+        const int remainingInLoop =
+            loopSamples_ - relative;
+
+        const int chunk =
+            std::min(nb - processed, remainingInLoop);
+
+        short *source = nullptr;
+
+        if (GetSongBuffer(sourcePosition, chunk, &source) != S_OK ||
+            !source)
+        {
+            return nullptr;
         }
 
-        // First pass captures a complete loop; subsequent frames repeat it.
-        for (std::size_t f = 0; f < frames; ++f) {
-            const std::size_t frameIndex = writePos_ % loopFrames_;
-            const std::size_t slot = frameIndex * ch;
-            for (std::size_t c = 0; c < ch; ++c) {
-                const float dry = input[f * ch + c];
-                float wetSample = dry;
-                if (captured_) {
-                    wetSample = buffer_[slot + c];
-                } else {
-                    buffer_[slot + c] = dry;
-                }
-                output[f * ch + c] = dry * (1.0f - wet_) + wetSample * wet_;
-            }
-            ++writePos_;
-            if (!captured_ && writePos_ >= loopFrames_) {
-                captured_ = true;
-                writePos_ = 0;
-            }
-        }
+        std::memcpy(
+            output_.data() +
+                static_cast<size_t>(processed) * 2,
+            source,
+            static_cast<size_t>(chunk) * 2 * sizeof(short)
+        );
+
+        processed += chunk;
     }
 
-private:
-    static double barsForIndex(int index) {
-        switch (index) {
-            case BAR_1_32: return 1.0 / 32.0;
-            case BAR_1_16: return 1.0 / 16.0;
-            case BAR_1_8:  return 1.0 / 8.0;
-            case BAR_1_4:  return 1.0 / 4.0;
-            case BAR_1_2:  return 1.0 / 2.0;
-            case BAR_3_4:  return 3.0 / 4.0;
-            case BAR_1:    return 1.0;
-            case BAR_2:    return 2.0;
-            case BAR_4:    return 4.0;
-            default:       return 1.0 / 4.0;
-        }
-    }
-
-    void recalcLoopFrames() {
-        // Assumes quarter-note BPM and 4/4 unless host supplies another meter.
-        const double secondsPerBar = (60.0 / bpm_) * beatsPerBar_;
-        const double seconds = secondsPerBar * barsForIndex(lengthIndex_);
-        const double raw = seconds * sampleRate_;
-        loopFrames_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::llround(raw)));
-        if (buffer_.size() != loopFrames_ * static_cast<std::size_t>(std::max(1, channels_))) {
-            buffer_.assign(loopFrames_ * static_cast<std::size_t>(std::max(1, channels_)), 0.0f);
-            writePos_ = 0;
-        }
-    }
-
-    float wet_;
-    int lengthIndex_;
-    double bpm_, beatsPerBar_, sampleRate_;
-    int channels_ = 2;
-    std::size_t writePos_, loopFrames_;
-    bool active_;
-bool captured_;
-std::vector<float> buffer_;
-  
-};
+    return output_.data();
+}
