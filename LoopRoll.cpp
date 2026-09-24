@@ -26,7 +26,7 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     lengthControl_ = 0.5f;
     filterControl_ = lengthControl_;
     strengthControl_ = 1.0f;
-    DeclareParameterSlider(&lengthControl_, ID_FILTER_ROLL, "Loop Roll", "Length", lengthControl_);
+    DeclareParameterColorFX(&lengthControl_, ID_FILTER_ROLL, "Loop Roll", "Length");
     OnParameter(ID_FILTER_ROLL);
 
     return S_OK;
@@ -93,6 +93,10 @@ HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
         filterControl_ = lengthControl_;
         lengthIndex_ = controlToIndex(lengthControl_);
         filterEnabled_ = active_;
+        char command[64] = {};
+        std::snprintf(command, sizeof(command), "filter %.6f",
+                      static_cast<double>(lengthControl_));
+        SendCommand(command);
         if (active_)
             loopSamples_ = requestedLoopSamples();
     }
@@ -154,6 +158,7 @@ HRESULT VDJ_API LoopRollPlugin::OnStop()
 {
     active_ = false;
     filterEnabled_ = false;
+    SendCommand("filter 0.5");
     resetFilter();
     output_.clear();
     return S_OK;
@@ -264,24 +269,6 @@ void LoopRollPlugin::resetFilter()
 
 float LoopRollPlugin::processFilter(float sample, int channel)
 {
-    const float offset = filterControl_ - 0.5f;
-    if (!filterEnabled_ || std::abs(offset) < 0.05f || SampleRate <= 0)
-        return sample;
-
-    const float amount = std::clamp((std::abs(offset) - 0.05f) / 0.45f, 0.0f, 1.0f);
-    const float cutoff = 15000.0f * std::pow(20.0f / 15000.0f, amount);
-    const float alpha = 1.0f - std::exp(
-        -2.0f * 3.14159265358979323846f * cutoff /
-        static_cast<float>(SampleRate));
-    float lowPass = sample;
-    for (int stage = 0; stage < 4; ++stage)
-    {
-        filterState_[channel][stage] +=
-            alpha * (lowPass - filterState_[channel][stage]);
-        lowPass = filterState_[channel][stage];
-    }
-
-    if (offset < 0.0f)
-        return lowPass;
-    return sample - lowPass;
+    (void)channel;
+    return sample;
 }
