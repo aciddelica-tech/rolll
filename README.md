@@ -15,8 +15,10 @@ VirtualDJ SDK headers.
 
 ## Behavior
 
-- The Length control is off at its center (`0`). Moving either direction
-  selects `3/4`, `1/2`, `1/4`, `1/8`, `1/16`, and `1/32` beats.
+- The panel contains separate Length and Filter controls. Length is off at
+  its center (`0`) and selects `3/4`, `1/2`, `1/4`, `1/8`, `1/16`, and
+  `1/32` beats in either direction. Filter controls VirtualDJ's
+  `EQUALISER\FILTER` independently.
 - Loop Roll and filtering are enabled and disabled together.
 - Filter processing is bipolar: the left side displays `<20Hz` and applies a
   low-pass/high cut, the right side displays `>15kHz` and applies a

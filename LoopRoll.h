@@ -22,7 +22,8 @@ private:
 
     enum ParameterId
     {
-        ID_FILTER_ROLL = 1
+        ID_LENGTH = 1,
+        ID_FILTER = 2
     };
 
     // Length is a bipolar control: 0 is the center/off position and either

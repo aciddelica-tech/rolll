@@ -26,8 +26,10 @@ HRESULT VDJ_API LoopRollPlugin::OnLoad()
     lengthControl_ = 0.5f;
     filterControl_ = lengthControl_;
     strengthControl_ = 1.0f;
-    DeclareParameterColorFX(&lengthControl_, ID_FILTER_ROLL, "Loop Roll", "Length");
-    OnParameter(ID_FILTER_ROLL);
+    DeclareParameterSlider(&lengthControl_, ID_LENGTH, "Loop Roll", "Length", lengthControl_);
+    DeclareParameterColorFX(&filterControl_, ID_FILTER, "Loop Roll", "Filter");
+    OnParameter(ID_LENGTH);
+    OnParameter(ID_FILTER);
 
     return S_OK;
 }
@@ -70,14 +72,23 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<text font=\"arial\" size=\"13\" color=\"white\" align=\"center\" format=\"X\"/>"
         "<Tooltip>Close Loop Roll</Tooltip></button>"
         "<textzone><pos x=\"48\" y=\"10\"/><size width=\"300\" height=\"24\"/>"
-        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" format=\"Length\"/></textzone>"
-        "<slider action=\"effect slider 1\" orientation=\"round\" frommiddle=\"true\"><pos x=\"172\" y=\"55\"/><size width=\"46\" height=\"46\"/>"
+        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" format=\"Loop Length + Filter\"/></textzone>"
+        "<slider action=\"effect slider 1\" orientation=\"round\" frommiddle=\"true\"><pos x=\"82\" y=\"55\"/><size width=\"46\" height=\"46\"/>"
         "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
         "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
         "<fill width=\"46\" height=\"46\" radius=\"18\" color=\"#AA2020\" backcolor=\"#202020\"/></slider>"
-        "<textzone><pos x=\"80\" y=\"108\"/><size width=\"230\" height=\"24\"/>"
-        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" action=\"get_effect_slider_text 1\"/>"
-        "</textzone>"
+        "<textzone><pos x=\"136\" y=\"67\"/><size width=\"100\" height=\"18\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Length\"/></textzone>"
+        "<textzone><pos x=\"136\" y=\"86\"/><size width=\"100\" height=\"18\"/>"
+        "<text font=\"arial\" size=\"13\" color=\"white\" action=\"get_effect_slider_text 1\"/></textzone>"
+        "<slider action=\"effect slider 2\" orientation=\"round\" frommiddle=\"true\"><pos x=\"245\" y=\"55\"/><size width=\"46\" height=\"46\"/>"
+        "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
+        "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
+        "<fill width=\"46\" height=\"46\" radius=\"18\" color=\"#AA2020\" backcolor=\"#202020\"/></slider>"
+        "<textzone><pos x=\"299\" y=\"67\"/><size width=\"70\" height=\"18\"/>"
+        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Filter\"/></textzone>"
+        "<textzone><pos x=\"299\" y=\"86\"/><size width=\"80\" height=\"18\"/>"
+        "<text font=\"arial\" size=\"13\" color=\"white\" action=\"get_effect_slider_text 2\"/></textzone>"
         "</Skin>";
     pluginInterface->Xml = kSkinXml;
     pluginInterface->ImageBuffer = const_cast<unsigned char*>(kSkinPng);
@@ -87,18 +98,21 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
 
 HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
 {
-    if (id == ID_FILTER_ROLL)
+    if (id == ID_LENGTH)
     {
         lengthControl_ = std::clamp(lengthControl_, 0.0f, 1.0f);
-        filterControl_ = lengthControl_;
         lengthIndex_ = controlToIndex(lengthControl_);
         filterEnabled_ = active_;
-        char command[64] = {};
-        std::snprintf(command, sizeof(command), "filter %.6f",
-                      static_cast<double>(lengthControl_));
-        SendCommand(command);
         if (active_)
             loopSamples_ = requestedLoopSamples();
+    }
+    else if (id == ID_FILTER)
+    {
+        filterControl_ = std::clamp(filterControl_, 0.0f, 1.0f);
+        char command[64] = {};
+        std::snprintf(command, sizeof(command), "filter %.6f",
+                      static_cast<double>(filterControl_));
+        SendCommand(command);
     }
     return S_OK;
 }
@@ -108,7 +122,7 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
     if (!outParam || outParamSize <= 0)
         return E_POINTER;
 
-    if (id == ID_FILTER_ROLL)
+    if (id == ID_LENGTH)
     {
         const float offset = lengthControl_ - 0.5f;
         if (std::abs(offset) < 0.05f)
@@ -120,6 +134,16 @@ HRESULT VDJ_API LoopRollPlugin::OnGetParameterString(int id, char* outParam, int
             std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s bt",
                           lengthName(lengthIndex_));
         }
+        return S_OK;
+    }
+    if (id == ID_FILTER)
+    {
+        const float offset = filterControl_ - 0.5f;
+        if (std::abs(offset) < 0.05f)
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "0 filter");
+        else
+            std::snprintf(outParam, static_cast<size_t>(outParamSize), "%s filter",
+                          offset < 0.0f ? "Low Cut" : "High Cut");
         return S_OK;
     }
     return E_NOTIMPL;
