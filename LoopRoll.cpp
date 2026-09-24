@@ -257,8 +257,9 @@ short* VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
 
 void LoopRollPlugin::resetFilter()
 {
-    filterState_[0] = 0.0f;
-    filterState_[1] = 0.0f;
+    for (int channel = 0; channel < 2; ++channel)
+        for (int stage = 0; stage < 4; ++stage)
+            filterState_[channel][stage] = 0.0f;
 }
 
 float LoopRollPlugin::processFilter(float sample, int channel)
@@ -272,9 +273,15 @@ float LoopRollPlugin::processFilter(float sample, int channel)
     const float alpha = 1.0f - std::exp(
         -2.0f * 3.14159265358979323846f * cutoff /
         static_cast<float>(SampleRate));
-    filterState_[channel] += alpha * (sample - filterState_[channel]);
+    float lowPass = sample;
+    for (int stage = 0; stage < 4; ++stage)
+    {
+        filterState_[channel][stage] +=
+            alpha * (lowPass - filterState_[channel][stage]);
+        lowPass = filterState_[channel][stage];
+    }
 
     if (offset < 0.0f)
-        return filterState_[channel];
-    return sample - filterState_[channel];
+        return lowPass;
+    return sample - lowPass;
 }

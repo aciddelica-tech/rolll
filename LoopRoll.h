@@ -36,7 +36,7 @@ private:
     bool active_ = false;
     int loopStart_ = 0;
     int loopSamples_ = 0;
-    float filterState_[2] = {};
+    float filterState_[2][4] = {};
     std::vector<short> output_;
 
     int requestedLoopSamples() const;
