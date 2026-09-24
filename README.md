@@ -15,10 +15,9 @@ VirtualDJ SDK headers.
 
 ## Behavior
 
-- The panel contains separate Length and Filter controls. Length is off at
-  its center (`0`) and selects `3/4`, `1/2`, `1/4`, `1/8`, `1/16`, and
-  `1/32` beats in either direction. Filter controls VirtualDJ's
-  `EQUALISER\FILTER` only while Loop Roll is enabled.
+- The panel exposes the Loop Length control visually; Filter remains an
+  internal synchronized host parameter and is not shown in the skin.
+- The skin declares stretch breaklines so the plugin window can be resized.
 - Loop Roll and filtering are enabled and disabled together.
 - Filter processing is bipolar: the left side displays `<20Hz` and applies a
   low-pass/high cut, the right side displays `>15kHz` and applies a

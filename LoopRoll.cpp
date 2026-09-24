@@ -55,7 +55,7 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
 
     pluginInterface->Type = VDJINTERFACE_SKIN;
     static const char kSkinXml[] =
-        "<Skin name=\"Loop Roll\" version=\"8\" width=\"390\" height=\"175\">"
+        "<Skin name=\"Loop Roll\" version=\"8\" width=\"260\" height=\"175\" breakline=\"48\" breakline2=\"145\">"
         "<Copyright>Acid Delica</Copyright>"
         "<button action=\"effect active\"><pos x=\"10\" y=\"8\"/><size width=\"28\" height=\"28\"/>"
         "<off color=\"#404040\" border=\"#AAAAAA\" border_size=\"2\"/>"
@@ -71,8 +71,8 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<off color=\"#303030\" border=\"#777777\" border_size=\"1\"/>"
         "<text font=\"arial\" size=\"13\" color=\"white\" align=\"center\" format=\"X\"/>"
         "<Tooltip>Close Loop Roll</Tooltip></button>"
-        "<textzone><pos x=\"48\" y=\"10\"/><size width=\"300\" height=\"24\"/>"
-        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" format=\"Loop Length + Filter\"/></textzone>"
+        "<textzone><pos x=\"48\" y=\"10\"/><size width=\"190\" height=\"24\"/>"
+        "<text font=\"arial\" size=\"18\" weight=\"bold\" color=\"white\" format=\"Loop Length\"/></textzone>"
         "<slider action=\"effect slider 1\" orientation=\"round\" frommiddle=\"true\"><pos x=\"82\" y=\"55\"/><size width=\"46\" height=\"46\"/>"
         "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
         "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
@@ -81,14 +81,8 @@ HRESULT VDJ_API LoopRollPlugin::OnGetUserInterface(TVdjPluginInterface8* pluginI
         "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Length\"/></textzone>"
         "<textzone><pos x=\"136\" y=\"86\"/><size width=\"100\" height=\"18\"/>"
         "<text font=\"arial\" size=\"13\" color=\"white\" action=\"get_effect_slider_text 1\"/></textzone>"
-        "<slider action=\"effect slider 2\" orientation=\"round\" frommiddle=\"true\"><pos x=\"245\" y=\"55\"/><size width=\"46\" height=\"46\"/>"
-        "<off width=\"34\" height=\"34\" shape=\"circle\" color=\"#303030\" border=\"#888888\" border_size=\"2\"/>"
-        "<fader color=\"#DD3333\" width=\"4\" height=\"17\" radius=\"2\" anglemin=\"-150\" anglemax=\"150\"/>"
-        "<fill width=\"46\" height=\"46\" radius=\"18\" color=\"#AA2020\" backcolor=\"#202020\"/></slider>"
-        "<textzone><pos x=\"299\" y=\"67\"/><size width=\"70\" height=\"18\"/>"
-        "<text font=\"arial\" size=\"13\" weight=\"bold\" color=\"white\" format=\"Filter\"/></textzone>"
-        "<textzone><pos x=\"299\" y=\"86\"/><size width=\"80\" height=\"18\"/>"
-        "<text font=\"arial\" size=\"13\" color=\"white\" action=\"get_effect_slider_text 2\"/></textzone>"
+        "<textzone><pos x=\"18\" y=\"150\"/><size width=\"224\" height=\"16\"/>"
+        "<text font=\"arial\" size=\"10\" color=\"#888888\" align=\"center\" format=\"Drag the window edge to resize\"/></textzone>"
         "</Skin>";
     pluginInterface->Xml = kSkinXml;
     pluginInterface->ImageBuffer = const_cast<unsigned char*>(kSkinPng);
