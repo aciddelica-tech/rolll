@@ -104,20 +104,25 @@ HRESULT VDJ_API LoopRollPlugin::OnParameter(int id)
         filterControl_ = lengthControl_;
         lengthIndex_ = controlToIndex(lengthControl_);
         filterEnabled_ = active_;
-        char command[64] = {};
-        std::snprintf(command, sizeof(command), "filter %.6f",
-                      static_cast<double>(filterControl_));
-        SendCommand(command);
         if (active_)
+        {
+            char command[64] = {};
+            std::snprintf(command, sizeof(command), "filter %.6f",
+                          static_cast<double>(filterControl_));
+            SendCommand(command);
             loopSamples_ = requestedLoopSamples();
+        }
     }
     else if (id == ID_FILTER)
     {
         filterControl_ = std::clamp(filterControl_, 0.0f, 1.0f);
-        char command[64] = {};
-        std::snprintf(command, sizeof(command), "filter %.6f",
-                      static_cast<double>(filterControl_));
-        SendCommand(command);
+        if (active_)
+        {
+            char command[64] = {};
+            std::snprintf(command, sizeof(command), "filter %.6f",
+                          static_cast<double>(filterControl_));
+            SendCommand(command);
+        }
     }
     return S_OK;
 }
