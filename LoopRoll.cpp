@@ -168,6 +168,10 @@ HRESULT VDJ_API LoopRollPlugin::OnStart()
     loopSamples_ = requestedLoopSamples();
     resetFilter();
     filterEnabled_ = true;
+    char filterCommand[64] = {};
+    std::snprintf(filterCommand, sizeof(filterCommand), "filter %.6f",
+                  static_cast<double>(filterControl_));
+    SendCommand(filterCommand);
     if (loopSamples_ <= 0)
     {
         active_ = true;
