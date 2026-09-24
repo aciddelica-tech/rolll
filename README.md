@@ -17,7 +17,9 @@ VirtualDJ SDK headers.
 
 - The panel exposes the Loop Length control visually; Filter remains an
   internal synchronized host parameter and is not shown in the skin.
-- The skin declares stretch breaklines so the plugin window can be resized.
+- The skin includes the Pin and Close buttons. Its `breakline` and `breakline2`
+  values define the vertical stretch boundaries, allowing the docked/fixed
+  window to be resized by the host while keeping the controls in place.
 - Loop Roll and filtering are enabled and disabled together.
 - Filter processing is bipolar: the left side displays `<20Hz` and applies a
   low-pass/high cut, the right side displays `>15kHz` and applies a
