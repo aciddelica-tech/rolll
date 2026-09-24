@@ -174,11 +174,11 @@ HRESULT VDJ_API LoopRollPlugin::OnStart()
         return S_OK;
     }
 
-    const double gridBeats =
-        static_cast<double>(loopSamples_) / static_cast<double>(SongBpm);
-    const double gridIndex = std::floor(SongPosBeats / gridBeats);
+    const double beatLength = lengthBeats(lengthIndex_);
+    const double gridIndex = std::floor(SongPosBeats / beatLength);
     loopStart_ = static_cast<int>(
-        std::llround(gridIndex * static_cast<double>(loopSamples_)));
+        std::llround(gridIndex * beatLength *
+                     static_cast<double>(SongBpm)));
     active_ = true;
     return S_OK;
 }
@@ -268,18 +268,11 @@ short* VDJ_API LoopRollPlugin::OnGetSongBuffer(int pos, int nb)
         if (GetSongBuffer(sourcePosition, chunk, &source) != S_OK || !source)
             return nullptr;
 
-        short* dry = nullptr;
-        if (GetSongBuffer(absolutePosition, chunk, &dry) != S_OK || !dry)
-            return nullptr;
-
-        const float wet = strengthControl_;
-        const float dryMix = 1.0f - wet;
         for (int i = 0; i < chunk * 2; ++i)
         {
-            const float mixed = static_cast<float>(dry[i]) * dryMix +
-                                static_cast<float>(source[i]) * wet;
             const int channel = i % 2;
-            const float filtered = processFilter(mixed, channel);
+            const float filtered = processFilter(
+                static_cast<float>(source[i]), channel);
             output_[static_cast<size_t>(processed) * 2 + static_cast<size_t>(i)] =
                 static_cast<short>(std::clamp(filtered, -32768.0f, 32767.0f));
         }
